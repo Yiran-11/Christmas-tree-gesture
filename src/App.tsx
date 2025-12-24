@@ -7,10 +7,10 @@ import { useTreeStore } from './store';
 import HandGestureController from './HandGestureController'; 
 import StickyNote from './StickyNote'; 
 
-// --- 配置 ---
+// --- 全局配置常量 ---
 const TREE_HEIGHT = 16;
 const TREE_RADIUS = 6;
-const CHAR_SEQUENCE = ['圣', '诞', '快', '乐'];
+const CHAR_SEQUENCE = ['圣', '诞', '快', '乐']; 
 const CHAR_SCALE = 15; 
 
 // --- 工具函数 (保持不变) ---
@@ -38,7 +38,7 @@ const getScatteredPosition = () => {
   const v = new THREE.Vector3(); v.setFromSphericalCoords(15 + Math.random() * 20, Math.acos(2 * Math.random() - 1), Math.random() * Math.PI * 2); return v;
 };
 
-// --- 组件 ---
+// --- 视觉组件 (保持不变) ---
 const Foliage = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null); const count = 20000; const geoRef = useRef<THREE.BufferGeometry>(null);
   const { initialTarget, initialChaos, randoms } = useMemo(() => {
@@ -68,7 +68,7 @@ const SpiralRibbon = () => {
   return ( <instancedMesh ref={meshRef} args={[undefined, undefined, count]}> <tetrahedronGeometry args={[0.05, 0]} /> <meshStandardMaterial color="#F0F0F0" emissive="#FFFFFF" emissiveIntensity={0.3} transparent opacity={0.8} /> </instancedMesh> );
 };
 
-// --- Hand Cursor ---
+// --- 手势光标 (保持不变) ---
 const HandCursor = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -84,7 +84,7 @@ const HandCursor = () => {
   return ( <mesh ref={meshRef}> <sphereGeometry args={[0.3, 16, 16]} /> <meshStandardMaterial color="white" emissive="white" emissiveIntensity={2} /> </mesh> );
 };
 
-// --- Scene ---
+// --- Scene 主场景 ---
 const Scene = () => {
   const innerGroupRef = useRef<THREE.Group>(null);
   const outerGroupRef = useRef<THREE.Group>(null);
@@ -116,17 +116,13 @@ const Scene = () => {
     if (isNaN(chaos)) return;
     if (chaos > 0.8 && !isSwitchedRef.current) { setStepIndex(prev => prev + 1); isSwitchedRef.current = true; }
     if (chaos < 0.1) { isSwitchedRef.current = false; }
-
     const { x } = useTreeStore.getState().handRotation;
-    
-    // 🟢 修改：不乘 2.0，直接用 Controller 传来的值 (0.1, <0, >0.1)
-    const rotationSpeed = (x || 0.1) * delta; 
-
-    if (outerGroupRef.current) outerGroupRef.current.rotation.y += rotationSpeed;
+    const rotationSpeed = (x || 0) * delta; 
+    if (outerGroupRef.current) outerGroupRef.current.rotation.y += rotationSpeed + delta * 0.1;
     if (innerGroupRef.current) {
         let shouldRotate = true;
         if (!isTreeMode && chaos < 0.5) { shouldRotate = false; innerGroupRef.current.rotation.y *= 0.95; }
-        if (shouldRotate) innerGroupRef.current.rotation.y += rotationSpeed;
+        if (shouldRotate) innerGroupRef.current.rotation.y += rotationSpeed + delta * 0.1;
     }
   });
 
@@ -166,8 +162,9 @@ export default function App() {
         <p className="text-white mt-2 tracking-widest text-sm uppercase opacity-80">
           🖐️ Right: Scatter & Rotate | 🤏 Left: Pinch Note (Follow the Red Dot!)
         </p>
-        <p className="text-yellow-300 mt-4 text-xs tracking-widest opacity-60 font-mono">
-          @2025 -ROBERT-
+        {/* 🟢 修改：调整了 mt-4 为 mt-2，并修改了名字 */}
+        <p className="text-yellow-300 mt-2 text-xs tracking-widest opacity-60 font-mono">
+          @2025 -Yiran11-
         </p>
       </div>
       <Canvas dpr={[1, 2]} gl={{ antialias: false, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.5 }}>

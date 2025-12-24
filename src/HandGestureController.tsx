@@ -13,7 +13,6 @@ const HandGestureController = () => {
   const updateHandsRef = useRef(updateHands);
   const setHandRotationRef = useRef(setHandRotation);
   
-  // 用于平滑过渡速度
   const currentRotationRef = useRef(0.1); 
 
   useEffect(() => {
@@ -62,12 +61,11 @@ const HandGestureController = () => {
       }
     };
 
-    // 画骨骼线 & 分区线
     const drawOverlay = (ctx: CanvasRenderingContext2D, landmarksList: any[]) => {
       const w = ctx.canvas.width;
       const h = ctx.canvas.height;
 
-      // 1. 画中间的分区虚线
+      // 1. 画分区线
       ctx.beginPath();
       ctx.setLineDash([5, 5]);
       ctx.moveTo(w / 2, 0);
@@ -75,15 +73,15 @@ const HandGestureController = () => {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.setLineDash([]); // 重置实线
+      ctx.setLineDash([]); 
 
-      // 2. 画文字标记
+      // 2. 文字标记
       ctx.font = "12px Arial";
       ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
       ctx.fillText("左手区 (抓取)", 10, h - 10);
       ctx.fillText("右手区 (旋转&炸开)", w / 2 + 10, h - 10);
 
-      // 3. 画手骨骼
+      // 3. 画骨骼
       if (!landmarksList) return;
       const connections = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [0, 9], [9, 10], [10, 11], [11, 12], [0, 13], [13, 14], [14, 15], [15, 16], [0, 17], [17, 18], [18, 19], [19, 20], [5, 9], [9, 13], [13, 17]];
       
@@ -129,18 +127,11 @@ const HandGestureController = () => {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.scale(-1, 1);
-            ctx.translate(-canvas.width, 0);
-            
-            // 绘制视觉辅助
             drawOverlay(ctx, results.landmarks);
           }
 
           let leftHand = null;
           let rightHand = null;
-          
-          // 默认目标速度：0.1 (非常慢的稳定自转)
           let targetSpeed = 0.1; 
 
           if (results.landmarks && results.landmarks.length > 0) {
@@ -148,8 +139,7 @@ const HandGestureController = () => {
               const landmarks = results.landmarks[index];
               const label = hand[0].displayName; 
               
-              // 基础坐标计算
-              const x3D = (0.5 - landmarks[8].x) * 35; 
+              const x3D = (landmarks[8].x - 0.5) * 35; 
               const y3D = (0.5 - landmarks[8].y) * 25; 
               const position = new THREE.Vector3(x3D, y3D, 8); 
 
@@ -164,39 +154,25 @@ const HandGestureController = () => {
 
               const handData = { position, isPinching, isOpen };
 
-              // --- 1. 左手逻辑 ---
               if (label === 'Left') {
                 leftHand = handData;
               }
 
-              // --- 2. 右手逻辑 (控制旋转) ---
               if (label === 'Right') {
                 rightHand = handData;
-                
-                // 获取手腕的 X 坐标 (0 ~ 1)
-                // 镜像后：0.5 是中间，1.0 是最右边
-                // 我们设定右侧区域的中心点为 "舒适区" (Neutral Zone) = 0.75
-                const x = landmarks[0].x; 
-                const neutralX = 0.75; 
-
-                // 计算偏移量：手离 0.75 有多远
-                // 如果手在 0.75，diff = 0 -> 速度 = 0.1 (默认慢速)
-                // 如果手在 0.50 (偏左)，diff = -0.25 -> 速度减小，变成负数(左转)
-                // 如果手在 1.00 (偏右)，diff = +0.25 -> 速度增加(右转)
-                const diff = x - neutralX;
-
-                // 灵敏度系数：值越小，变化越温柔
-                const sensitivity = 1.5; 
-
-                // 核心公式：基础慢速 + (偏移量 * 灵敏度)
-                targetSpeed = 0.1 + (diff * sensitivity);
+                const rawX = landmarks[0].x; 
+                if (rawX < 0.4) {
+                   const factor = (0.4 - rawX) / 0.4; 
+                   targetSpeed = -1.5 * factor; // 左转
+                } 
+                else if (rawX > 0.6) {
+                   const factor = (rawX - 0.6) / 0.4;
+                   targetSpeed = 1.5 * factor; // 右转
+                }
               }
             });
-            
-            if (ctx) ctx.restore();
           }
 
-          // 平滑插值：让速度变化像流水一样，而不是瞬变
           currentRotationRef.current += (targetSpeed - currentRotationRef.current) * 0.05;
 
           updateHandsRef.current({ left: leftHand, right: rightHand });
@@ -219,12 +195,13 @@ const HandGestureController = () => {
     <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 50 }}>
       <video
         ref={videoRef}
-        style={{ width: '160px', height: '120px', borderRadius: '10px', transform: 'scaleX(-1)', objectFit: 'cover', opacity: 0.6 }}
+        // 🟢 修改：将 opacity 从 0.6 改为 0.8，让画面更清晰
+        style={{ width: '160px', height: '120px', borderRadius: '10px', objectFit: 'cover', opacity: 0.3 }}
         autoPlay muted playsInline
       />
       <canvas 
         ref={canvasRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '160px', height: '120px', transform: 'scaleX(-1)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '160px', height: '120px', pointerEvents: 'none' }}
       />
     </div>
   );
