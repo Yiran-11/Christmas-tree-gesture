@@ -7,13 +7,27 @@ import { useTreeStore } from './store';
 import HandGestureController from './HandGestureController'; 
 import StickyNote from './StickyNote'; 
 
-// --- 全局配置常量 ---
+// --- 1. 全局配置常量 ---
 const TREE_HEIGHT = 16;
 const TREE_RADIUS = 6;
 const CHAR_SEQUENCE = ['圣', '诞', '快', '乐']; 
 const CHAR_SCALE = 15; 
 
-// --- 工具函数 (保持不变) ---
+// 🟢 新增：便签上的初始文案 (你可以修改这里)
+const INITIAL_WISHES = [
+  "人生不止一个方向",
+  "冬天终将过去^^",
+  "没关系 我知道我在渐入佳境",
+  "亲爱的自己 人生总是柳暗花明",
+  "天天开心",
+  "未来可期",
+  "好快乐 今天吃了好吃的！还不开心吗 那再去吃一顿！",
+  "心想事成",
+  "岁岁平安",
+  "2025 卧槽！又活一年！牛逼老铁！"
+];
+
+// --- 2. 工具函数 (保持不变) ---
 const generateCharParticles = (char: string, count: number): Float32Array => {
   const canvas = document.createElement('canvas'); const size = 128; canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d'); if (!ctx) return new Float32Array(count * 3);
@@ -68,7 +82,6 @@ const SpiralRibbon = () => {
   return ( <instancedMesh ref={meshRef} args={[undefined, undefined, count]}> <tetrahedronGeometry args={[0.05, 0]} /> <meshStandardMaterial color="#F0F0F0" emissive="#FFFFFF" emissiveIntensity={0.3} transparent opacity={0.8} /> </instancedMesh> );
 };
 
-// --- 手势光标 (保持不变) ---
 const HandCursor = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -106,7 +119,8 @@ const Scene = () => {
         phi: Math.acos(-1 + (2 * i) / count), 
         theta: Math.sqrt(count * Math.PI) * Math.acos(-1 + (2 * i) / count)
       },
-      initialText: `Wish ${i + 1}`
+      // 🟢 修改：从常量数组中循环获取文案
+      initialText: INITIAL_WISHES[i % INITIAL_WISHES.length]
     }));
   }, []);
 
@@ -162,7 +176,6 @@ export default function App() {
         <p className="text-white mt-2 tracking-widest text-sm uppercase opacity-80">
           🖐️ Right: Scatter & Rotate | 🤏 Left: Pinch Note (Follow the Red Dot!)
         </p>
-        {/* 🟢 修改：调整了 mt-4 为 mt-2，并修改了名字 */}
         <p className="text-yellow-300 mt-2 text-xs tracking-widest opacity-60 font-mono">
           @2025 -Yiran11-
         </p>
