@@ -75,18 +75,21 @@ const HandGestureController = () => {
       ctx.stroke();
       ctx.setLineDash([]); 
 
-      // 2. 文字标记
-      ctx.font = "12px Arial";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      // 2. 文字标记 (加亮)
+      ctx.font = "bold 14px Arial";
+      ctx.fillStyle = "rgba(255, 255, 255, 1.0)";
+      ctx.shadowColor = "black";
+      ctx.shadowBlur = 4;
       ctx.fillText("左手区 (抓取)", 10, h - 10);
       ctx.fillText("右手区 (旋转&炸开)", w / 2 + 10, h - 10);
 
-      // 3. 画骨骼
+      // 3. 画骨骼 (加粗)
       if (!landmarksList) return;
       const connections = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [0, 9], [9, 10], [10, 11], [11, 12], [0, 13], [13, 14], [14, 15], [15, 16], [0, 17], [17, 18], [18, 19], [19, 20], [5, 9], [9, 13], [13, 17]];
       
       for (const landmarks of landmarksList) {
-        ctx.lineWidth = 2;
+        // 🟢 修改：线宽从 2 改为 3，颜色更亮
+        ctx.lineWidth = 3;
         ctx.strokeStyle = '#00FF00'; 
         for (const [start, end] of connections) {
           const p1 = landmarks[start];
@@ -99,7 +102,7 @@ const HandGestureController = () => {
         ctx.fillStyle = 'red'; 
         for (const point of landmarks) {
           ctx.beginPath();
-          ctx.arc(point.x * w, point.y * h, 3, 0, 2 * Math.PI);
+          ctx.arc(point.x * w, point.y * h, 4, 0, 2 * Math.PI); // 点也变大一点
           ctx.fill();
         }
       }
@@ -132,7 +135,8 @@ const HandGestureController = () => {
 
           let leftHand = null;
           let rightHand = null;
-          let targetSpeed = 0.1; 
+          // 🟢 修改：默认自转速度降低 (从 0.1 -> 0.05)
+          let targetSpeed = 0.05; 
 
           if (results.landmarks && results.landmarks.length > 0) {
             results.handedness.forEach((hand, index) => {
@@ -161,13 +165,15 @@ const HandGestureController = () => {
               if (label === 'Right') {
                 rightHand = handData;
                 const rawX = landmarks[0].x; 
+                // 🟢 修改：大幅降低手势旋转的灵敏度 (从 1.5 -> 0.8)
+                // 这样树转起来会更沉稳，不那么晕
                 if (rawX < 0.4) {
                    const factor = (0.4 - rawX) / 0.4; 
-                   targetSpeed = -1.5 * factor; // 左转
+                   targetSpeed = -0.8 * factor; 
                 } 
                 else if (rawX > 0.6) {
                    const factor = (rawX - 0.6) / 0.4;
-                   targetSpeed = 1.5 * factor; // 右转
+                   targetSpeed = 0.8 * factor; 
                 }
               }
             });
@@ -193,10 +199,10 @@ const HandGestureController = () => {
 
   return (
     <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 50 }}>
+      {/* 🟢 修改：Opacity 设为 1.0，完全清晰 */}
       <video
         ref={videoRef}
-        // 🟢 修改：将 opacity 从 0.6 改为 0.8，让画面更清晰
-        style={{ width: '160px', height: '120px', borderRadius: '10px', objectFit: 'cover', opacity: 0.3 }}
+        style={{ width: '160px', height: '120px', borderRadius: '10px', objectFit: 'cover', opacity: 1.0, border: '2px solid rgba(255,255,255,0.3)' }}
         autoPlay muted playsInline
       />
       <canvas 

@@ -17,17 +17,17 @@ const CHAR_SCALE = 15;
 const INITIAL_WISHES = [
   "人生不止一个方向",
   "冬天终将过去^^",
-  "没关系 我知道我在渐入佳境",
-  "亲爱的自己 人生总是柳暗花明",
-  "天天开心",
-  "未来可期",
+  "没关系\n我知道我在渐入佳境",
+  "亲爱的自己\n人生总是柳暗花明",
+  "2026寄语：\n别寄",
+  "好吧\n平淡的日子\n也是完美的日子",
   "好快乐 今天吃了好吃的！\n还不开心吗 那再去吃一顿！", 
-  "心想事成",
-  "岁岁平安",
-  "2025 卧槽！又活一年！\n牛逼老铁！"
+  "鸡公煲鸡公煲 \n进入我的胃～",
+  "看到自己的脸\n你决定给这世界一点好脸色",
+  "2025 卧槽！\n又活一年！\n牛逼老铁！"
 ];
 
-// --- 工具函数 ---
+// --- 工具函数 (保持不变) ---
 const generateCharParticles = (char: string, count: number): Float32Array => {
   const canvas = document.createElement('canvas'); const size = 128; canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d'); if (!ctx) return new Float32Array(count * 3);
@@ -42,19 +42,17 @@ const generateCharParticles = (char: string, count: number): Float32Array => {
   }
   return positions;
 };
-
 const getTreePosition = (ratio: number, fixedTheta?: number, radiusOffset: number = 0) => {
   const y = -TREE_HEIGHT / 2 + ratio * TREE_HEIGHT;
   const r = (1 - ratio) * (TREE_RADIUS + radiusOffset);
   const theta = fixedTheta !== undefined ? fixedTheta : Math.random() * Math.PI * 2;
   return new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta));
 };
-
 const getScatteredPosition = () => {
   const v = new THREE.Vector3(); v.setFromSphericalCoords(15 + Math.random() * 20, Math.acos(2 * Math.random() - 1), Math.random() * Math.PI * 2); return v;
 };
 
-// --- 视觉组件 ---
+// --- 视觉组件 (保持不变) ---
 const Foliage = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null); const count = 20000; const geoRef = useRef<THREE.BufferGeometry>(null);
   const { initialTarget, initialChaos, randoms } = useMemo(() => {
@@ -115,18 +113,14 @@ const Scene = () => {
   const notesData = useMemo(() => {
     const count = INITIAL_WISHES.length; 
     return new Array(count).fill(0).map((_, i) => {
-      // 🟢 修改：调整 phi 计算公式，避免底部
-      // 原始范围 (-1 到 1) 改为 (-0.3 到 1)，切掉底部 35%
       const yProgress = -0.3 + (1.3 * i) / (count - 1); 
-      // 反余弦算出的角度
       const phi = Math.acos(yProgress); 
-      
       return {
         id: i,
         anchorParams: {
           radius: 7.5 + Math.random(), 
           phi: phi, 
-          theta: Math.sqrt(count * Math.PI) * phi * 5 // 重新打散分布
+          theta: Math.sqrt(count * Math.PI) * phi * 5
         },
         initialText: INITIAL_WISHES[i]
       };
@@ -142,14 +136,14 @@ const Scene = () => {
     const { x } = useTreeStore.getState().handRotation;
     const rotationSpeed = (x || 0) * delta; 
     
-    // 🟢 修改：将自转基础速度系数从 0.1 降为 0.02
-    if (outerGroupRef.current) outerGroupRef.current.rotation.y += rotationSpeed + delta * 0.02;
+    // 🟢 修改：旋转速度进一步降低 (0.02 -> 0.005)
+    // 这样树的自转会非常缓慢优雅，手势控制也更细腻
+    if (outerGroupRef.current) outerGroupRef.current.rotation.y += rotationSpeed * 0.2 + delta * 0.005;
     
     if (innerGroupRef.current) {
         let shouldRotate = true;
         if (!isTreeMode && chaos < 0.5) { shouldRotate = false; innerGroupRef.current.rotation.y *= 0.95; }
-        // 同步降低内层旋转速度
-        if (shouldRotate) innerGroupRef.current.rotation.y += rotationSpeed + delta * 0.02;
+        if (shouldRotate) innerGroupRef.current.rotation.y += rotationSpeed * 0.2 + delta * 0.005;
     }
   });
 
@@ -180,19 +174,22 @@ const Scene = () => {
   );
 };
 
-// 🟢 新增：音乐播放器组件
+// 🟢 修改：全新音乐播放器组件
 const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const togglePlay = () => {
+  // 🟢 修改：点击逻辑 - 播放时点击变暂停，暂停时点击从头播
+  const handleClick = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        audioRef.current.play().catch(e => console.log("播放失败，可能需要交互", e));
+        audioRef.current.currentTime = 0; // 从头开始
+        audioRef.current.play().catch(e => console.log("播放失败", e));
+        setIsPlaying(true);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -200,21 +197,19 @@ const AudioPlayer = () => {
     <div className="absolute bottom-5 left-5 z-50">
       <audio ref={audioRef} src="/Etereo.mp3" loop />
       <button 
-        onClick={togglePlay}
-        className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white/20 transition-all"
+        onClick={handleClick}
+        className={`
+          flex items-center justify-center w-12 h-12 rounded-full 
+          bg-white/10 backdrop-blur-md border border-white/30 text-white 
+          hover:bg-white/20 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)]
+          ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''} 
+        `}
+        title="点击暂停 / 重播"
       >
-        {isPlaying ? (
-           // 暂停图标
-           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-             <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-           </svg>
-        ) : (
-           // 播放图标
-           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-             <path d="M8 5v14l11-7z"/>
-           </svg>
-        )}
-        <span className="text-sm font-light tracking-widest">Etereo</span>
+        {/* 纯图标 (音符) */}
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
       </button>
     </div>
   );
@@ -224,8 +219,6 @@ export default function App() {
   return (
     <div className="w-full h-screen bg-black relative select-none">
       <HandGestureController />
-      
-      {/* 顶部文字 */}
       <div className="absolute top-10 w-full text-center z-10 pointer-events-none">
         <h1 className="text-5xl font-bold text-yellow-500 tracking-widest drop-shadow-lg font-serif">MERRY CHRISTMAS</h1>
         <p className="text-white mt-2 tracking-widest text-sm uppercase opacity-80">
@@ -236,7 +229,6 @@ export default function App() {
         </p>
       </div>
 
-      {/* 🟢 插入播放器 */}
       <AudioPlayer />
 
       <Canvas dpr={[1, 2]} gl={{ antialias: false, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.5 }}>
