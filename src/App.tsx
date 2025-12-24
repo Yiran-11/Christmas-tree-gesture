@@ -7,13 +7,13 @@ import { useTreeStore } from './store';
 import HandGestureController from './HandGestureController'; 
 import StickyNote from './StickyNote'; 
 
-// --- 1. 全局配置常量 ---
+// --- 全局配置常量 ---
 const TREE_HEIGHT = 16;
 const TREE_RADIUS = 6;
 const CHAR_SEQUENCE = ['圣', '诞', '快', '乐']; 
 const CHAR_SCALE = 15; 
 
-// 🟢 新增：便签上的初始文案 (你可以修改这里)
+// 🟢 修改：全新的治愈系文案 (无引号)
 const INITIAL_WISHES = [
   "人生不止一个方向",
   "冬天终将过去^^",
@@ -21,13 +21,13 @@ const INITIAL_WISHES = [
   "亲爱的自己 人生总是柳暗花明",
   "天天开心",
   "未来可期",
-  "好快乐 今天吃了好吃的！还不开心吗 那再去吃一顿！",
+  "好快乐 今天吃了好吃的！\n还不开心吗 那再去吃一顿！", // 支持换行
   "心想事成",
   "岁岁平安",
-  "2025 卧槽！又活一年！牛逼老铁！"
+  "2025 卧槽！又活一年！\n牛逼老铁！"
 ];
 
-// --- 2. 工具函数 (保持不变) ---
+// --- 工具函数 (保持不变) ---
 const generateCharParticles = (char: string, count: number): Float32Array => {
   const canvas = document.createElement('canvas'); const size = 128; canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d'); if (!ctx) return new Float32Array(count * 3);
@@ -111,7 +111,7 @@ const Scene = () => {
   const currentChar = CHAR_SEQUENCE[charIndex];
 
   const notesData = useMemo(() => {
-    const count = 10; 
+    const count = INITIAL_WISHES.length; // 根据文案数量自动生成
     return new Array(count).fill(0).map((_, i) => ({
       id: i,
       anchorParams: {
@@ -119,8 +119,7 @@ const Scene = () => {
         phi: Math.acos(-1 + (2 * i) / count), 
         theta: Math.sqrt(count * Math.PI) * Math.acos(-1 + (2 * i) / count)
       },
-      // 🟢 修改：从常量数组中循环获取文案
-      initialText: INITIAL_WISHES[i % INITIAL_WISHES.length]
+      initialText: INITIAL_WISHES[i]
     }));
   }, []);
 
