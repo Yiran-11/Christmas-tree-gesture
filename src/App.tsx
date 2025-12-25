@@ -195,7 +195,7 @@ const AudioPlayer = () => {
 
   return (
     <div className="absolute bottom-5 left-5 z-50">
-      <audio ref={audioRef} src="/Etereo.mp3" loop />
+      <audio ref={audioRef} src="./Etereo.mp3" loop />
       <button 
         onClick={handleClick}
         className={`
@@ -220,7 +220,9 @@ export default function App() {
     <div className="w-full h-screen bg-black relative select-none">
       <HandGestureController />
       <div className="absolute top-10 w-full text-center z-10 pointer-events-none">
-        <h1 className="text-5xl font-bold text-yellow-500 tracking-widest drop-shadow-lg font-serif">MERRY CHRISTMAS</h1>
+        <h1 className="text-5xl font-bold text-yellow-500 tracking-widest drop-shadow-lg font-serif">
+             MERRY CHRISTMAS
+        </h1>
         <p className="text-white mt-2 tracking-widest text-sm uppercase opacity-80">
           🖐️ Right: Scatter & Rotate | 🤏 Left: Pinch Note (Follow the Red Dot!)
         </p>
